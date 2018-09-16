@@ -20,6 +20,12 @@ COMMENT : '//' .*? '\n' -> skip;
 // Whitespaces
 WS      : [ \t\n\r]+ -> skip;
 
+// Operators
+OP_ADD  : '+' ;
+OP_SUB  : '-' ;
+OP_MUL  : '*' ;
+OP_DIV  : '/' ;
+
 
 // Fragments
 fragment DIGIT      : '0'..'9';
