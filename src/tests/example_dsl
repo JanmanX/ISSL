@@ -1,0 +1,21 @@
+clock {
+    pc = pc + 4
+    flags = flags * 0
+}
+
+add (d,s,t) : d = s + t
+sub (d,s,t) : d = s - t
+jmpandsubtract42 (adr, reg) : {
+    pc = adr
+    reg = reg - 42
+    
+}
+
+beq (rs1, rs2, offset) : if (rs1 == rs2) {
+    pc = pc + offset
+}
+
+u64 REGS[32]
+i32 REGS2[16]
+f64 FREGS[64]
+
