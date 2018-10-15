@@ -1,4 +1,4 @@
-lexer grammar SMEDSLLexerRules;
+lexer grammar ISSLLexerRules;
 
 
 // ID

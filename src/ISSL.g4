@@ -5,23 +5,22 @@ import ISSLLexerRules;
 specification	:    specs* ;
 
 
-specs   :       register_specification 
-        |       clock_specification
-        |       instruction_specification
+specs   :       bus_specification 
+        |       clock_specification     
+        |       stage_specification
         ;
 
 
-// REGISTER SPECIFICATION
-register_specification  :   access_specifier? r_type ID ('[' INT ']')? ;
-register    :   ID ('[' INT ']') ; 
+// BUS SPECIFICATION
+bus_specification  :       'bus' ID '{' channel_specification* '}'     ; 
+channel_specification  :   r_type ID ; // TODO: ('[' INT ']')? ;
 
 
 // CLOCK SPECIFICATION
-clock_specification     :       'clock' '{' stat* '}' ;
+clock_specification     :       'clock' '{' ID* '}'     ;
 
-
-// INSTRUCTION SPECIFICATION
-instruction_specification   : ID ('(' ID (',' ID)* ')')? ':' (stat | '{' stat* '}') ;
+// STAGE SPECIFICATION
+stage_specification     :       ID '{' stat* '}'        ;
 
 
 // OTHER
@@ -29,6 +28,7 @@ stat    :    'while' '(' expr ')' stat          # while
         |    'if' '(' expr ')' stat             # if
         |    '{' stat* '}'                      # block
         |    ID '=' expr                        # assign
+        |    r_type ID ('=' expr)               # varDecl 
         ;
 
 
@@ -36,15 +36,15 @@ expr    :   '(' expr ')'                        # parens
         |   expr op=(OP_MUL | OP_DIV) expr      # MulDiv
         |   expr op=(OP_ADD | OP_SUB) expr      # AddSub
         |   expr op=(OP_EQ  | OP_NEQ) expr      # EqNeq
-        |   ID                                  # id
+        |   QUALIFIED_ID                        # id
         |   INT                                 # int
         ;
 
-access_specifier        :    'hidden' 
-                        ;
+// IDs
+QUALIFIED_ID:   ID ('.' ID)*    ;
 
 // TYPES
-r_type    :   TYPE_INT
+r_type  :   TYPE_INT
         |   TYPE_FLOAT
         ;
 
