@@ -27,26 +27,25 @@ stage_specification     :       ID '{' stat* '}'        ;
 stat    :    'while' '(' expr ')' stat          # while
         |    'if' '(' expr ')' stat             # if
         |    '{' stat* '}'                      # block
-        |    ID '=' expr                        # assign
-        |    r_type ID ('=' expr)               # varDecl 
+        |    qualified_id '=' expr              # assign
+        |    r_type ID ('=' expr)?              # varDecl 
         ;
-
 
 expr    :   '(' expr ')'                        # parens
         |   expr op=(OP_MUL | OP_DIV) expr      # MulDiv
         |   expr op=(OP_ADD | OP_SUB) expr      # AddSub
         |   expr op=(OP_EQ  | OP_NEQ) expr      # EqNeq
-        |   QUALIFIED_ID                        # id
+        |   qualified_id                        # id
         |   INT                                 # int
         ;
 
-// IDs
-QUALIFIED_ID:   ID ('.' ID)*    ;
-
 // TYPES
+qualified_id:   ID ('.' ID)*    ;
+
 r_type  :   TYPE_INT
         |   TYPE_FLOAT
         ;
 
 TYPE_FLOAT  :   'f' INT ;
 TYPE_INT    :   ('i'|'u') INT ;
+
