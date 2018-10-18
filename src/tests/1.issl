@@ -1,0 +1,57 @@
+bus S1 {
+    u64 a
+    u32 b
+    u16 c 
+    u8  d
+}
+
+bus S2 {
+    u32 b
+    u16 c 
+    u8  d
+}
+
+bus S3 {
+    u16 c 
+    u8  d
+}
+
+bus S4 {
+   u8  d
+}
+
+clock {
+    Stage1
+    Stage2
+    Stage3
+    Stage4
+}
+
+Stage1 {
+    u64 t_a = 10
+    u32 t_b = 20
+    u16 t_c = 30
+    u8  t_d = 40
+
+    S1.a = t_a
+    S1.b = t_b
+    S1.c = t_c
+    S1.d = t_d
+
+}
+
+Stage2 {
+    u32 t_b = S1.b
+    u16 t_c = S2.c
+    u8  t_d = S3.d
+
+    S1.a = 10
+}
+
+Stage3 {
+
+}
+
+Stage4 {
+
+}

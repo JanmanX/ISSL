@@ -35,13 +35,16 @@ def main():
     walker = ParseTreeWalker()
 
 
-    # Build Symbol Table
-    symbolTableGenerator = DefPhase()
-    walker.walk(symbolTableGenerator, tree)
-    
+    # Definition phase 
+    defs = DefPhase()
+    walker.walk(defs, tree)
+    # Reference phase
+    refs = RefPhase(defs.symbolTable)
+    walker.walk(refs, tree)
+
 
     # Type Check
-    pprint(symbolTableGenerator.symbolTable)
+    # pprint(symbolTableGenerator.symbolTable)
     exit(0) 
     
     # CodeGen

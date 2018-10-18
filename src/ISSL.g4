@@ -17,7 +17,9 @@ channel_specification  :   r_type ID ; // TODO: ('[' INT ']')? ;
 
 
 // CLOCK SPECIFICATION
-clock_specification     :       'clock' '{' ID* '}'     ;
+clock_specification     :       'clock' '{' clock_stage* '}'     ;
+clock_stage             :       ID    ;
+
 
 // STAGE SPECIFICATION
 stage_specification     :       ID '{' stat* '}'        ;
