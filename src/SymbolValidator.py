@@ -6,10 +6,41 @@ from antlr_python.ISSLListener import ISSLListener
 from antlr_python.ISSLVisitor import ISSLVisitor
 from pprint import pprint
 
-Bus = collections.namedtuple("Bus", ['name', 'channels','driver'])
-Channel = collections.namedtuple("Channel", ['name','type'])
-Stage = collections.namedtuple("Stage", ['name', 'vars'])
-Var = collections.namedtuple("Var", ['name', 'type'])
+
+class Bus():
+    def __init__(self, name, channels, driver):
+        self.name = name
+        self.channels = channels
+        self.driver = driver
+
+    def __repr__(self):
+        return ("Bus(name:{0},Channels:{1}, driver: {2})"
+                .format(self.name, self.channels, self.driver))
+
+class Channel():
+    def __init__(self, name, _type):
+        self.name = name
+        self.type = _type
+
+    def __repr__(self):
+        return "Channel(name:{0}, type: {1})".format(self.name, self.type)
+
+
+class Stage():
+    def __init__(self, name, vars):
+        self.name = name
+        self.vars = vars
+
+    def __repr__(self):
+        return "Stage(name:{0}, vars: {1})".format(self.name, self.vars)
+
+class Var():
+    def __init__(self, name, _type):
+        self.name = name
+        self.type = _type
+
+    def __repr__(self):
+        return "Var(name:{0}, type: {1})".format(self.name, self.type)
 
 class DefPhase(ISSLListener):
     # Enter a parse tree produced by ISSLParser#specification.
@@ -118,6 +149,8 @@ class RefPhase(ISSLListener):
                 return
 
             # Set driver
+            pprint(self.defs)
+            exit(0)
             print(bus)
             bus.driver = self.currentStage.name
 
