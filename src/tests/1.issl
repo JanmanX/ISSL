@@ -45,11 +45,10 @@ Stage2 {
     u16 t_c = S2.c
     u8  t_d = S3.d
 
-    S1.a = 10
 }
 
 Stage3 {
-
+    S3.d = S2.c + S1.d
 }
 
 Stage4 {

@@ -5,6 +5,7 @@ from antlr_python.ISSLLexer import ISSLLexer
 from antlr_python.ISSLParser import ISSLParser
 
 from SymbolValidator import DefPhase, RefPhase
+from CodeGen import CodeGenSMEIL
 
 # from CodeGen import CodeGen
 import sys
@@ -42,14 +43,13 @@ def main():
     refs = RefPhase(defs.symbolTable)
     walker.walk(refs, tree)
 
-
     # Type Check
-    # pprint(symbolTableGenerator.symbolTable)
-    exit(0) 
-    
+    # TODO
+
     # CodeGen
-    # codeGen = CodeGen(parser, symbolTable)
-    #code = codeGen.visit(tree, symbolTable)
+    codeGen = CodeGenSMEIL(refs.symbolTable)
+    walker.walk(codeGen, tree)
+    print(codeGen.code)
 
 
 

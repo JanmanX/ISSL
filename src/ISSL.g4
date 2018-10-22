@@ -26,7 +26,7 @@ stage_specification     :       ID '{' stat* '}'        ;
 
 
 // OTHER
-stat    :    'while' '(' expr ')' stat          # while
+stat    :    'for' '(' qualified_id '=' expr 'to' expr ')' stat  # for
         |    'if' '(' expr ')' stat             # if
         |    '{' stat* '}'                      # block
         |    qualified_id '=' expr              # assign
