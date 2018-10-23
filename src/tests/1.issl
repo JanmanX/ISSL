@@ -28,10 +28,19 @@ clock {
 }
 
 Stage1 {
+    
     u64 t_a = 10
     u32 t_b = 20
     u16 t_c = 30
     u8  t_d = 40
+
+
+    if (1 == 1) {
+        if(2 != 2) {
+            
+        }
+    }
+
 
     S1.a = t_a
     S1.b = t_b

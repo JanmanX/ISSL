@@ -48,8 +48,7 @@ def main():
 
     # CodeGen
     codeGen = CodeGenSMEIL(refs.symbolTable)
-    walker.walk(codeGen, tree)
-    print(codeGen.code)
+    print(codeGen.visit(tree))
 
 
 

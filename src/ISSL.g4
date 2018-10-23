@@ -26,7 +26,7 @@ stage_specification     :       ID '{' stat* '}'        ;
 
 
 // OTHER
-stat    :    'for' '(' qualified_id '=' expr 'to' expr ')' stat  # for
+stat    :    'for' '(' iterator=qualified_id '=' from_=expr 'to' to=expr ')' stat  # for
         |    'if' '(' expr ')' stat             # if
         |    '{' stat* '}'                      # block
         |    qualified_id '=' expr              # assign
@@ -34,9 +34,9 @@ stat    :    'for' '(' qualified_id '=' expr 'to' expr ')' stat  # for
         ;
 
 expr    :   '(' expr ')'                        # parens
-        |   expr op=(OP_MUL | OP_DIV) expr      # MulDiv
-        |   expr op=(OP_ADD | OP_SUB) expr      # AddSub
-        |   expr op=(OP_EQ  | OP_NEQ) expr      # EqNeq
+        |   left=expr op=(OP_MUL | OP_DIV) right=expr  # MulDiv
+        |   left=expr op=(OP_ADD | OP_SUB) right=expr  # AddSub
+        |   left=expr op=(OP_EQ  | OP_NEQ) right=expr  # EqNeq
         |   qualified_id                        # id
         |   INT                                 # int
         ;
