@@ -8,10 +8,11 @@ from pprint import pprint
 
 
 class Bus():
-    def __init__(self, name, channels, reads):
+    def __init__(self, name, channels, reads, exposed=False):
         self.name = name
         self.channels = channels
         self.reads = reads
+        self.exposed = exposed
     def __repr__(self):
         return ("Bus(name:{0},Channels:{1})"
                 .format(self.name, self.channels))
@@ -54,13 +55,14 @@ class DefPhase(ISSLListener):
     # Enter a parse tree produced by ISSLParser#bus_specification.
     def enterBus_specification(self, ctx:ISSLParser.Bus_specificationContext):
         name = ctx.ID().getText()
+        exposed = True if ctx.modifier is not None else False
 
         # Check if Bus name already exists
         if any(isinstance(b, Bus) and b.name == name for b in self.symbolTable):
             print("Bus: \"{0}\" already defined!".format(name))
             return
 
-        self.currentBus = Bus(name,[],[])
+        self.currentBus = Bus(name,[],[], exposed)
 
     # Exit a parse tree produced by ISSLParser#bus_specification.
     def exitBus_specification(self, ctx:ISSLParser.Bus_specificationContext):

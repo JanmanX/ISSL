@@ -18,7 +18,10 @@ class CodeGenSMEIL(ISSLVisitor):
         for c in bus.channels:
             channels += CodeGenSMEIL.generateChannelCode(c)
 
-        return SMEILSymbols.SME_BUS_FMT.format(bus.name, channels)
+        exposed = (SMEILSymbols.SME_BUS_MODIFIER_EXPOSED 
+                    if bus.exposed 
+                    else SMEILSymbols.SME_BUS_MODIFIER_NONE)
+        return SMEILSymbols.SME_BUS_FMT.format(exposed, bus.name, channels)
 
     @staticmethod
     def generateNetworkCode(name, busses, procs):

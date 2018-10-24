@@ -12,15 +12,17 @@ OP_NEQ = "!="
 ASSIGN = "="
 
 
+
 SME_FOR_FMT = "for {0} = {1} to {2} {{\n{3}\n}}\n"
 SME_IF_FMT = "if ( {0} ) {1}"
 SME_PROC_FMT= "proc {0} ({1}) {{\n{2}\n}} \n"
 
 SME_BUS_FMT = """
-bus {0} {{
-{1}}};
+{0} bus {1} {{
+{2}}};
 """
-
+SME_BUS_MODIFIER_EXPOSED="exposed"
+SME_BUS_MODIFIER_NONE=""
 SME_CHANNEL_FMT = "{0}: {1};\n"
 
 SME_NETWORK_FMT = """

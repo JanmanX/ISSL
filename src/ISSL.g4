@@ -12,7 +12,7 @@ specs   :       bus_specification
 
 
 // BUS SPECIFICATION
-bus_specification  :       'bus' ID '{' channel_specification* '}'     ; 
+bus_specification  :      modifier='exposed'? 'bus' ID '{' channel_specification* '}'     ; 
 channel_specification  :   r_type ID ; // TODO: ('[' INT ']')? ;
 
 

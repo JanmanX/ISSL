@@ -1,0 +1,3 @@
+[submodule "src/libsme"]
+	path = src/libsme
+	url = https://github.com/truls/libsme.git
