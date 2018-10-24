@@ -18,7 +18,7 @@ SME_PROC_FMT= "proc {0} ({1}) {{\n{2}\n}} \n"
 
 SME_BUS_FMT = """
 bus {0} {{
-{1}}}
+{1}}};
 """
 
 SME_CHANNEL_FMT = "{0}: {1};\n"
