@@ -5,7 +5,9 @@ lexer grammar ISSLLexerRules;
 ID  : ID_LETER (ID_LETER | DIGIT)*;
 
 // Numbers
-INT     : DIGIT+ ;
+INT     : '0' 'x' HEXDIGIT+
+        | '0' 'b' BINDIGIT+
+        | DIGIT+ ;
 FLOAT   : DIGIT+ '.' DIGIT*
         | '.' DIGIT+
         ;
@@ -31,5 +33,7 @@ OP_NEQ  : '!=' ;
 
 // Fragments
 fragment DIGIT      : '0'..'9';
+fragment HEXDIGIT   : 'a'..'f' | 'A'..'F' | DIGIT;
+fragment BINDIGIT   : '0' | '1';
 fragment ID_LETER   : 'a'..'z' | 'A'..'Z' | '_';
 fragment ESC        : '\\' [btnr"\\] ; // Escape sequences, such as \b, \t, \n etc.
