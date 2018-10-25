@@ -43,7 +43,8 @@ expr    :   '(' expr ')'                        # parens
         ;
 
 // TYPES
-qualified_id:   ID ('.' ID)*    ;
+qualified_id    :   ID ('.' ID)*    
+                |   qualified_id '[' expr ']';  // array index
 
 r_type  :   TYPE_INT 
         |   TYPE_FLOAT
