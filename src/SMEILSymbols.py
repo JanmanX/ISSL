@@ -12,11 +12,10 @@ OP_NEQ = "!="
 ASSIGN = "="
 
 
-
+SME_VARDECL_FMT = "var {0}: {1} = {2};\n"
 SME_FOR_FMT = "for {0} = {1} to {2} {{\n{3}\n}}\n"
 SME_IF_FMT = "if ( {0} ) {1}"
-SME_PROC_FMT= "proc {0} ({1}) {{\n{2}\n}} \n"
-
+SME_PROC_FMT= "proc {0} ({1})\n{2} {{\n{3}\n}} \n"
 SME_BUS_FMT = """
 {0} bus {1} {{
 {2}}};

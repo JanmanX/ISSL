@@ -30,7 +30,7 @@ stat    :    'for' '(' iterator=qualified_id '=' from_=expr 'to' to=expr ')' sta
         |    'if' '(' expr ')' stat             # if
         |    '{' stat* '}'                      # block
         |    qualified_id '=' expr              # assign
-        |    r_type ID ('=' expr)?              # varDecl 
+        |    r_type ID ('=' initVal=expr)?      # varDecl 
         ;
 
 expr    :   '(' expr ')'                        # parens
@@ -39,14 +39,17 @@ expr    :   '(' expr ')'                        # parens
         |   left=expr op=(OP_EQ  | OP_NEQ) right=expr  # EqNeq
         |   qualified_id                        # id
         |   INT                                 # int
+        |   '[' expr (',' expr)* ']'            # array 
         ;
 
 // TYPES
 qualified_id:   ID ('.' ID)*    ;
 
-r_type  :   TYPE_INT
+r_type  :   TYPE_INT 
         |   TYPE_FLOAT
+        |   r_type array_specifier+ 
         ;
+array_specifier    : '[' INT ']'   ;
 
 TYPE_FLOAT  :   'f' INT ;
 TYPE_INT    :   ('i'|'u') INT ;

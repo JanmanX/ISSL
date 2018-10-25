@@ -38,10 +38,10 @@ class Stage():
         return "Stage(name:{0}, vars: {1})".format(self.name, self.vars)
 
 class Var():
-    def __init__(self, name, _type):
+    def __init__(self, name, _type, initValue="0"):
         self.name = name
         self.type = _type
-
+        self.initValue = initValue
     def __repr__(self):
         return "Var(name:{0}, type: {1})".format(self.name, self.type)
 

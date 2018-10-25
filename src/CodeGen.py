@@ -13,6 +13,13 @@ class CodeGenSMEIL(ISSLVisitor):
         return SMEILSymbols.SME_CHANNEL_FMT.format(channel.name, channel.type)
 
     @staticmethod
+    def generateVarDeclCode(var : Var):
+        return SMEILSymbols.SME_VARDECL_FMT.format(
+                                var.name,
+                                var.type,
+                                "0") 
+
+    @staticmethod
     def generateBusCode(bus: Bus):
         channels = ""
         for c in bus.channels:
@@ -83,11 +90,15 @@ class CodeGenSMEIL(ISSLVisitor):
         parameters_out = " ".join([", out {0}".format(b) for b in driver_busses])
         parameters = ""
 
+        # define vars
+        vars_ = "".join([CodeGenSMEIL.generateVarDeclCode(v) for v in stage.vars])
+
         code = "".join([self.visit(s) for s in ctx.stat()])
 
         return SMEILSymbols.SME_PROC_FMT.format(
             name,
             parameters,
+            vars_, 
             code
         )
 
@@ -173,6 +184,11 @@ class CodeGenSMEIL(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#int.
     def visitInt(self, ctx:ISSLParser.IntContext):
         return ctx.getText()
+
+    # Visit a parse tree produced by ISSLParser#array.
+    def visitArray(self, ctx:ISSLParser.ArrayContext):
+        return "[" + ",".join(self.visitChildren(ctx)) + "]"
+
 
     # Visit a parse tree produced by ISSLParser#qualified_id.
     def visitQualified_id(self, ctx:ISSLParser.Qualified_idContext):
