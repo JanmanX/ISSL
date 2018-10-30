@@ -187,8 +187,8 @@ class CodeGenSMEIL(ISSLVisitor):
         return ctx.getText()
 
     # Visit a parse tree produced by ISSLParser#array.
-    def visitArray(self, ctx:ISSLParser.ArrayContext):
-        return "[" + ",".join(self.visitChildren(ctx)) + "]"
+#    def visitArray(self, ctx:ISSLParser.ArrayContext):
+#        return "[" + ",".join(self.visitChildren(ctx)) + "]"
 
 
     # Visit a parse tree produced by ISSLParser#qualified_id.

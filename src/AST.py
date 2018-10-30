@@ -4,6 +4,8 @@ from antlr_python.ISSLParser import ISSLParser
 from antlr_python.ISSLListener import ISSLListener
 from antlr_python.ISSLVisitor import ISSLVisitor
 
+from enum import Enum
+
 
 class SpecificationNode():
     def __init__(self, buses, clock, stages):
@@ -81,8 +83,11 @@ class InitializerListNode():
     def __init__(self, exprs):
         self.exprs = exprs
 
-
 class TypeNode():
+    def __init__(self, type):
+        self.type = type
+
+class DataTypeNode():
     def __init__(self, type, dims):
         self.type = type
         self.dims = dims
@@ -103,34 +108,20 @@ class Operators(Enum):
     EQ = 5
     NEQ = 6
 
-class ASTBuilder(ParseTreeVisitor):
-   # def visitChildren(self, node):
-   #     print("entering visitChildren()")
-   #     result = self.defaultResult()
-   #     print("Result = {0}".format(result))
-   #     n = node.getChildCount()
-   #     for i in range(n):
-   #         if not self.shouldVisitNextChild(node, result):
-   #             return
-
-   #         c = node.getChild(i)
-   #         childResult = c.accept(self)
-   #         print("Aggregating {0} with {1}".format(result, childResult))
-   #         result = self.aggregateResult(result, childResult)
-
-   #     print("Leaving visitChildren() with {0}".format(result))
-   #     return result
-
+class ASTBuilder(ISSLVisitor):
     # default result of a .visitChildren(...)
     def defaultResult(self):
         return []
 
     def aggregateResult(self, aggregate, nextResult):
-        return aggregate.append(nextResult)
+        aggregate.append(nextResult)
+        return aggregate
 
     # Visit a parse tree produced by ISSLParser#specification.
     def visitSpecification(self, ctx:ISSLParser.SpecificationContext):
         results = self.visitChildren(ctx)
+        print(results)
+        exit(0)
         # for i in range(ctx.getChildCount()):
         #     childResult = ctx.getChild(i).accept(self)
         #     results.append(childResult)
@@ -145,8 +136,7 @@ class ASTBuilder(ParseTreeVisitor):
 
     # Visit a parse tree produced by ISSLParser#specs.
     def visitSpecs(self, ctx:ISSLParser.SpecsContext):
-        print("--- {0}".format(self.visitChildren(ctx)))
-        return self.visitChildren(ctx)
+        return self.visit(ctx.getChild(0))
 
 
     # Visit a parse tree produced by ISSLParser#bus_specification.
@@ -163,7 +153,7 @@ class ASTBuilder(ParseTreeVisitor):
 
     # Visit a parse tree produced by ISSLParser#clock_specification.
     def visitClock_specification(self, ctx:ISSLParser.Clock_specificationContext):
-        return ClockNode(self.visitChildren(ctx))
+        return ClockNode([self.visit(i) for i in ctx.clock_stage()])
 
     # Visit a parse tree produced by ISSLParser#clock_stage.
     def visitClock_stage(self, ctx:ISSLParser.Clock_stageContext):
@@ -174,7 +164,7 @@ class ASTBuilder(ParseTreeVisitor):
     def visitStage_specification(self, ctx:ISSLParser.Stage_specificationContext):
         id = ctx.ID().getText()
 
-        stats = self.visitChildren(ctx.stat())
+        stats = [self.visit(s) for s in ctx.stat()]
         stats_modified = []
         vars = []
         for stat in stats:
@@ -227,13 +217,13 @@ class ASTBuilder(ParseTreeVisitor):
 
     # Visit a parse tree produced by ISSLParser#varDecl.
     def visitVarDecl(self, ctx:ISSLParser.VarDeclContext):
-        type = self.visit(ctx.r_type())
+        datatype = self.visit(ctx.datatype())
         id = IDNode(ctx.ID().getText())
         expr = ValueNode(0)
         if ctx.expr is not None:
             expr = self.visit(ctx.expr()) 
 
-        return VarDeclNode(type, id, expr)
+        return VarDeclNode(datatype, id, expr)
 
 
     # Visit a parse tree produced by ISSLParser#parens.
@@ -259,8 +249,8 @@ class ASTBuilder(ParseTreeVisitor):
 
     # Visit a parse tree produced by ISSLParser#AddSub.
     def visitAddSub(self, ctx:ISSLParser.AddSubContext):
-        left = self.visit(ctx.left())
-        right = self.visit(ctx.right())
+        left = self.visit(ctx.left)
+        right = self.visit(ctx.right)
         op = (Operators.ADD
                 if ctx.op.type == ISSLParser.OP_ADD
                 else Operators.SUB)  
@@ -276,13 +266,13 @@ class ASTBuilder(ParseTreeVisitor):
 
     # Visit a parse tree produced by ISSLParser#int.
     def visitInt(self, ctx:ISSLParser.IntContext):
-        return ValueNode(int(ctx.INT().getText()))
+        return ValueNode(ctx.INT().getText())
 
 
     # Visit a parse tree produced by ISSLParser#EqNeq.
     def visitEqNeq(self, ctx:ISSLParser.EqNeqContext):
-        left = self.visit(ctx.left())
-        right = self.visit(ctx.right())
+        left = self.visit(ctx.left)
+        right = self.visit(ctx.right)
         op = (Operators.EQ
                 if ctx.op.type == ISSLParser.OP_EQ
                 else Operators.NEQ)  
@@ -295,14 +285,24 @@ class ASTBuilder(ParseTreeVisitor):
         return IDNode(ctx.getText())
 
 
+    # Visit a parse tree produced by ISSLParser#datatype.
+    def visitDatatype(self, ctx:ISSLParser.DatatypeContext):
+        type = self.visit(ctx.r_type())
+        array_specifier = None
+        if ctx.array_specifier is not None:
+            array_specifier = [self.visit(a) for a in ctx.array_specifier()]
+
+        return DataTypeNode(type, array_specifier)
+
+
     # Visit a parse tree produced by ISSLParser#r_type.
     def visitR_type(self, ctx:ISSLParser.R_typeContext):
-        return TypeNode(sum(self.visit(ctx.array_specifier)))
+        return TypeNode(ctx.getText())
 
 
     # Visit a parse tree produced by ISSLParser#array_specifier.
     def visitArray_specifier(self, ctx:ISSLParser.Array_specifierContext):
-        return int(ctx.INT().getText())
+        return int(ctx.INT().getText(), base=0)
 
 
 

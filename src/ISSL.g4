@@ -30,7 +30,7 @@ stat    :    'for' '(' iterator=qualified_id '=' from_=expr 'to' to=expr ')' sta
         |    'if' '(' expr ')' stat             # if
         |    '{' stat* '}'                      # block
         |    qualified_id '=' expr              # assign
-        |    r_type ID ('=' expr)?              # varDecl 
+        |    datatype ID ('=' expr)?              # varDecl 
         ;
 
 expr    :   '(' expr ')'                        # parens
@@ -46,11 +46,12 @@ expr    :   '(' expr ')'                        # parens
 qualified_id    :   ID ('.' ID)*    
                 |   qualified_id '[' expr ']';  // array index
 
+
+datatype    :   r_type array_specifier*;
 r_type  :   TYPE_INT 
         |   TYPE_FLOAT
-        |   r_type array_specifier+ 
         ;
-array_specifier    : '[' INT ']'   ;
+array_specifier    : '[' arraySize=INT? ']'   ;
 
 TYPE_FLOAT  :   'f' INT ;
 TYPE_INT    :   ('i'|'u') INT ;
