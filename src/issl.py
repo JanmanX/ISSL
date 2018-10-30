@@ -6,6 +6,7 @@ from antlr_python.ISSLParser import ISSLParser
 
 from SymbolValidator import DefPhase, RefPhase
 from CodeGen import CodeGenSMEIL
+from AST import ASTBuilder
 
 # from CodeGen import CodeGen
 import sys
@@ -35,6 +36,12 @@ def main():
     tree = parser.specification()
     walker = ParseTreeWalker()
 
+    astBuilder = ASTBuilder()
+    ast = astBuilder.visit(tree)
+    print(ast)
+    print(vars(ast))
+    print(ast.buses)
+    exit(0)
 
     # Definition phase 
     defs = DefPhase()

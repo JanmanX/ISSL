@@ -159,8 +159,14 @@ class RefPhase(ISSLListener):
             channel.driver = self.currentStage.name
 
         else: # if write to local variable
+
+            # Remove array indexing, if any
+            qualified_id = qualified_id.split('[')[0]
+
             if not qualified_id in self.currentStage.vars:
-                print("Var: {0} not in scope!".format(qualified_id))
+                print("Var: {0} not in scope of {1}!".format(
+                    qualified_id,
+                    self.currentStage.name))
                 return
 
     # Enter a parse tree produced by ISSLParser#id.

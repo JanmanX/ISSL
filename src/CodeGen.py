@@ -16,6 +16,7 @@ class CodeGenSMEIL(ISSLVisitor):
     def generateVarDeclCode(var : Var):
         return SMEILSymbols.SME_VARDECL_FMT.format(
                                 var.name,
+                                "",
                                 var.type,
                                 "0") 
 
