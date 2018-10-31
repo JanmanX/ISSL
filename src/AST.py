@@ -8,18 +8,23 @@ from enum import Enum
 
 
 class SpecificationNode():
-    def __init__(self, buses, clock, stages, errors = []):
+    def __init__(self, buses, clock, stages):
         self.buses = buses
         self.clock = clock
         self.stages = stages
-        self.errors = [] # used in later stages to mark errors
 
     def __repr__(self):
         return "Specification:\n{0}\n{1}\n{2}".format(
             self.clock, self.buses, self.stages)
 
-    def addError(self, s):
-        self.errors.append(s)
+
+    def getBus(self, busName):
+        for b in self.buses:
+            if b.name == busName:
+                return b
+        return None
+
+
 
 class BusNode():
     def __init__(self, name, channels, driver=None):
@@ -47,8 +52,8 @@ class ClockNode():
         return "clock:{0}".format(self.stages)
 
 class StageNode():
-    def __init__(self, id, vars, stats):
-        self.id = id
+    def __init__(self, idNode, vars, stats):
+        self.idNode = idNode
         self.vars = vars
         self.stats = stats
 
@@ -80,8 +85,8 @@ class BlockNode():
         self.stats = stats
 
 class AssignNode():
-    def __init__(self, id, expr):
-        self.id = id
+    def __init__(self, idNode, expr):
+        self.idNode = idNode
         self.expr = expr
 
 class VarNode():
@@ -149,8 +154,6 @@ class Operators(Enum):
 
 class ASTVisitor():
     def visit(self, node):
-        print("Visiting: {0}".format(node))
-
         if(isinstance(node, SpecificationNode)): self.visitSpecificationNode(node)
         elif(isinstance(node, BusNode)): self.visitBusNode(node)
         elif(isinstance(node, ChannelNode)): self.visitChannelNode(node) 
@@ -216,10 +219,7 @@ class ASTVisitor():
         for v in node.vars:
             self.visit(v)
 
-
-        print("node.stats: {0}".format(node.stats))
         for stat in node.stats:
-            print("--" + str(stat))
             self.visit(stat)
 
     def visitAssignNode(self, node : AssignNode):
