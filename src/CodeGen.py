@@ -4,38 +4,93 @@ from antlr_python.ISSLParser import ISSLParser
 from antlr_python.ISSLListener import ISSLListener
 from antlr_python.ISSLVisitor import ISSLVisitor
 
+from AST import *
 from SymbolValidator import *
 import SMEILSymbols 
 
+
+def generateTypeCode(datatype : DataTypeNode):
+    t = datatype.type
+    dims = "".join(["[{0}]".format(d) for d in datatype.dims])
+    return dims+t
+
+def generateVarDeclCode(var : VarNode):
+    return SMEILSymbols.SME_VARDECL_FMT.format(
+                            var.id,
+                            generateTypeCode(var.type),
+                            "0") 
+
+
+def generateProcCode(stage : StageNode):
+    varDecls = "\n".join([generateVarDeclCode(v) for v in stage.vars])
+
+    return SMEILSymbols.SME_PROC_FMT.format(
+           stage.id,
+            
+    )
+
+        # "in" busses
+        parameters_in = ", ".join(["in {0}".format(b) for b in stage.reads])
+
+        # "out" busses
+        # Get all busses which have channels with the current process as its
+        # driver
+        driver_busses = [b.name for b in self.symbolTable
+                            if isinstance(b,Bus) and any(c.driver == name for c in b.channels)]
+        # Remove duplicates
+        driver_busses = list(set(driver_busses))
+        parameters_out = " ".join([", out {0}".format(b) for b in driver_busses])
+        parameters = ""
+
+        # define vars
+        vars_ = "".join([CodeGenSMEIL.generateVarDeclCode(v) for v in stage.vars])
+
+        code = "".join([self.visit(s) for s in ctx.stat()])
+
+        return SMEILSymbols.SME_PROC_FMT.format(
+            name,
+            parameters,
+            vars_, 
+            code
+        )
+
+
+
+
+def generateChannelCode(channel: Channel):
+    return SMEILSymbols.SME_CHANNEL_FMT.format(channel.name, channel.type)
+
+
+
+def generateBusCode(bus: Bus):
+    channels = ""
+    for c in bus.channels:
+        channels += generateChannelCode(c)
+
+    exposed = (SMEILSymbols.SME_BUS_MODIFIER_EXPOSED 
+                if bus.exposed 
+                else SMEILSymbols.SME_BUS_MODIFIER_NONE)
+    return SMEILSymbols.SME_BUS_FMT.format(exposed, bus.name, channels)
+
+
+def generateNetworkCode(name, busses, procs):
+    return ""
+#    busses = "".join([CodeGenSMEIL.generateBusCode(b) for b in busses])
+#    return SMEILSymbols.SME_NETWORK_FMT.format(name, busses, "")
+
+
+
+def generateSMEILCode(ast : SpecificationNode):
+    procs = "\n".join([generateProcCode(s) for s in ast.stages])
+    network = generateNetworkCode("main", ast.buses, ast.clock.stages)
+
+    return "{0}\n\n{1}".format(
+        procs,
+        network
+    )
+
+
 class CodeGenSMEIL(ISSLVisitor):
-    @staticmethod
-    def generateChannelCode(channel: Channel):
-        return SMEILSymbols.SME_CHANNEL_FMT.format(channel.name, channel.type)
-
-    @staticmethod
-    def generateVarDeclCode(var : Var):
-        return SMEILSymbols.SME_VARDECL_FMT.format(
-                                var.name,
-                                "",
-                                var.type,
-                                "0") 
-
-    @staticmethod
-    def generateBusCode(bus: Bus):
-        channels = ""
-        for c in bus.channels:
-            channels += CodeGenSMEIL.generateChannelCode(c)
-
-        exposed = (SMEILSymbols.SME_BUS_MODIFIER_EXPOSED 
-                    if bus.exposed 
-                    else SMEILSymbols.SME_BUS_MODIFIER_NONE)
-        return SMEILSymbols.SME_BUS_FMT.format(exposed, bus.name, channels)
-
-    @staticmethod
-    def generateNetworkCode(name, busses, procs):
-        busses = "".join([CodeGenSMEIL.generateBusCode(b) for b in busses])
-        return SMEILSymbols.SME_NETWORK_FMT.format(name, busses, "")
-
 
     def __init__(self, symbolTable):
         self.symbolTable = symbolTable

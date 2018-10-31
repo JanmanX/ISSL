@@ -42,6 +42,7 @@ expr    :   '(' expr ')'                        # parens
         |   '[' expr (',' expr)* ']'            # initializerList
         ;
 
+
 // TYPES
 qualified_id    :   ID ('.' ID)*    
                 |   qualified_id '[' expr ']';  // array index
@@ -51,7 +52,7 @@ datatype    :   r_type array_specifier*;
 r_type  :   TYPE_INT 
         |   TYPE_FLOAT
         ;
-array_specifier    : '[' arraySize=INT? ']'   ;
+array_specifier    : '[' INT? ']'   ;
 
 TYPE_FLOAT  :   'f' INT ;
 TYPE_INT    :   ('i'|'u') INT ;

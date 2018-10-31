@@ -8,32 +8,59 @@ from enum import Enum
 
 
 class SpecificationNode():
-    def __init__(self, buses, clock, stages):
+    def __init__(self, buses, clock, stages, errors = []):
         self.buses = buses
         self.clock = clock
         self.stages = stages
+        self.errors = [] # used in later stages to mark errors
+
+    def __repr__(self):
+        return "Specification:\n{0}\n{1}\n{2}".format(
+            self.clock, self.buses, self.stages)
+
+    def addError(self, s):
+        self.errors.append(s)
 
 class BusNode():
-    def __init__(self, name, channels):
+    def __init__(self, name, channels, driver=None):
         self.name = name
         self.channels = channels
+        self.driver = driver
+    def __repr__(self):
+        return "bus(name:{0}, channels:{1}, driver:{2})".format(
+            self.name, 
+            self.channels,
+            self.driver)
 
 class ChannelNode():
     def __init__(self, type, id):
         self.type = type
         self.id = id
+    def __repr__(self):
+        return "channel(id:{0}, type:{1})".format(self.id, self.type)
 
 
 class ClockNode():
     def __init__(self, stages):
         self.stages = stages
-
+    def __repr__(self):
+        return "clock:{0}".format(self.stages)
 
 class StageNode():
     def __init__(self, id, vars, stats):
         self.id = id
         self.vars = vars
         self.stats = stats
+
+    # Returns a list of buses being written to
+    def busesWrittenTo(self):
+        buses = []
+        for stat in self.stats:
+            if isinstance(stat, AssignNode):
+                if '.' in stat.id:
+                    buses.append(stat.id.split('.')[0]) # append bus name to list
+        return buses
+
 
 class ForNode():
     def __init__(self, iteratorId, fromExpr, toExpr, stat):
@@ -79,21 +106,31 @@ class IDNode():
     def __init__(self, id):
         self.id = id
 
+    def __repr__(self):
+        return self.id
+
 class InitializerListNode():
     def __init__(self, exprs):
         self.exprs = exprs
 
-class TypeNode():
-    def __init__(self, type):
-        self.type = type
-
 class DataTypeNode():
     def __init__(self, type, dims):
         self.type = type
-        self.dims = dims
+        self.dims = dims # list of sizes of each dimension
 
     def numDimentions(self):
+        if self.dims is None:
+            return 0
         return len(self.dims)
+
+    def __repr__(self):
+        if self.dims is None:
+            return self.type
+        return "{0}{1}".format(
+            self.type,
+            "".join(["[{0}]".format(d) for d in self.dims])
+        )
+
 
 
 class ValueNode():
@@ -108,6 +145,113 @@ class Operators(Enum):
     EQ = 5
     NEQ = 6
 
+
+
+class ASTVisitor():
+    def visit(self, node):
+        print("Visiting: {0}".format(node))
+
+        if(isinstance(node, SpecificationNode)): self.visitSpecificationNode(node)
+        elif(isinstance(node, BusNode)): self.visitBusNode(node)
+        elif(isinstance(node, ChannelNode)): self.visitChannelNode(node) 
+        elif(isinstance(node, ClockNode)): self.visitClockNode(node)
+        elif(isinstance(node, StageNode)): self.visitStageNode(node)
+        elif(isinstance(node, ForNode)): self.visitForNode(node)
+        elif(isinstance(node, IfNode)): self.visitIfNode(node)
+        elif(isinstance(node, BlockNode)): self.visitBlockNode(node)
+        elif(isinstance(node, AssignNode)): self.visitAssignNode(node)
+        elif(isinstance(node, VarNode)): self.visitVarNode(node)
+        elif(isinstance(node, VarDeclNode)): self.visitVarDeclNode(node)
+        elif(isinstance(node, InfixExprNode)): self.visitInfixExprNode(node)
+        elif(isinstance(node, IDNode)): self.visitIDNode(node)
+        elif(isinstance(node, InitializerListNode)): self.visitInitializerListNode(node)
+        elif(isinstance(node, DataTypeNode)): self.visitDatatypeNode(node)
+        elif(isinstance(node, ValueNode)): self.visitValueNode(node)
+        else: print(node); raise TypeError("Unknown node type: {0}".format(type(node)))
+
+
+
+    def  visitSpecificationNode(self, node : SpecificationNode):
+        for b in node.buses:
+            self.visit( b)
+
+        self.visit(node.clock)
+
+        for s in node.stages:
+            self.visit(s)  
+
+
+    def visitBusNode(self, node : BusNode):
+        self.visit(node.name)
+        for c in node.channels:
+            self.visit(c)
+    
+
+    def visitChannelNode(self, node : ChannelNode):
+        self.visit(node.id)
+        self.visit(node.type)
+
+    def visitClockNode(self, node : ClockNode):
+        for s in node.stages:
+            self.visit(s)
+
+    def visitStageNode(self, node : StageNode):
+        self.visit(node.id)
+        for v in node.vars:
+            self.visit(v)
+        for stat in node.stats:
+            self.visit(stat)
+
+    def visitForNode(self, node : ForNode):
+        self.visit(node.iteratorId)
+        self.visit(node.fromExpr)
+        self.visit(node.toExpr)
+        self.visit(node.stat)
+
+    def visitIfNode(self, node : IfNode):
+        self.visit(node.expr)
+        self.visit(node.stat)
+
+    def visitBlockNode(self, node : BlockNode):
+        for v in node.vars:
+            self.visit(v)
+
+
+        print("node.stats: {0}".format(node.stats))
+        for stat in node.stats:
+            print("--" + str(stat))
+            self.visit(stat)
+
+    def visitAssignNode(self, node : AssignNode):
+        self.visit(node.id)
+        self.visit(node.expr)
+
+    def visitVarNode(self, node : VarNode):
+        self.visit(node.id)
+        self.visit(node.type)
+
+    def visitVarDeclNode(self, node : VarDeclNode):
+        self.visit(node.type)
+        self.visit(node.id)
+        self.visit(node.expr)
+
+    def visitInfixExprNode(self, node : InfixExprNode):
+        self.visit(node.left)
+        self.visit(node.right)
+
+    def visitIDNode(self, node : IDNode):
+        pass
+
+    def visitInitializerListNode(self, node : InitializerListNode):
+        pass
+    
+    def visitDatatypeNode(self, node : DataTypeNode):
+        pass
+
+    def visitValueNode(self, node : ValueNode):
+        pass
+
+
 class ASTBuilder(ISSLVisitor):
     # default result of a .visitChildren(...)
     def defaultResult(self):
@@ -120,14 +264,12 @@ class ASTBuilder(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#specification.
     def visitSpecification(self, ctx:ISSLParser.SpecificationContext):
         results = self.visitChildren(ctx)
-        print(results)
-        exit(0)
         # for i in range(ctx.getChildCount()):
         #     childResult = ctx.getChild(i).accept(self)
         #     results.append(childResult)
 
         buses = [b for b in results if isinstance(b, BusNode)]
-        clock = [c for c in results if isinstance(c, ClockNode)]
+        clock = next(c for c in results if isinstance(c, ClockNode)) # only 1 clock
         stages = [s for s in results if isinstance(s, StageNode)]
     
         return SpecificationNode(buses, clock, stages) 
@@ -142,13 +284,16 @@ class ASTBuilder(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#bus_specification.
     def visitBus_specification(self, ctx:ISSLParser.Bus_specificationContext):
         channels = [self.visit(c) for c in (ctx.channel_specification())]
-        return BusNode(ctx.ID().getText(), channels )
+        id = IDNode(ctx.ID().getText())
+        return BusNode(id, channels)
 
 
     # Visit a parse tree produced by ISSLParser#channel_specification.
     def visitChannel_specification(self, ctx:ISSLParser.Channel_specificationContext):
         type = self.visit(ctx.r_type())
-        return ChannelNode(type, ctx.ID().getText())
+        print(type)
+        id = IDNode(ctx.ID().getText())
+        return ChannelNode(type, id)
 
 
     # Visit a parse tree produced by ISSLParser#clock_specification.
@@ -157,12 +302,12 @@ class ASTBuilder(ISSLVisitor):
 
     # Visit a parse tree produced by ISSLParser#clock_stage.
     def visitClock_stage(self, ctx:ISSLParser.Clock_stageContext):
-        return ctx.ID().getText()
+        return IDNode(ctx.ID().getText())
 
 
     # Visit a parse tree produced by ISSLParser#stage_specification.
     def visitStage_specification(self, ctx:ISSLParser.Stage_specificationContext):
-        id = ctx.ID().getText()
+        id = IDNode(ctx.ID().getText())
 
         stats = [self.visit(s) for s in ctx.stat()]
         stats_modified = []
@@ -195,7 +340,7 @@ class ASTBuilder(ISSLVisitor):
 
     # Visit a parse tree produced by ISSLParser#block.
     def visitBlock(self, ctx:ISSLParser.BlockContext):
-        stats = self.visitChildren(ctx)
+        stats = [self.visit(s) for s in ctx.stat()]
         stats_modified = []
         vars = []
         for stat in stats:
@@ -211,7 +356,9 @@ class ASTBuilder(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#assign.
     def visitAssign(self, ctx:ISSLParser.AssignContext):
         expr = self.visit(ctx.expr())
-        id = IDNode(ctx.qualified_id().getText())
+        idStr = ctx.qualified_id().getText()
+        id = IDNode(idStr)
+
         return AssignNode(id, expr)
 
 
@@ -223,6 +370,7 @@ class ASTBuilder(ISSLVisitor):
         if ctx.expr is not None:
             expr = self.visit(ctx.expr()) 
 
+        print(datatype)
         return VarDeclNode(datatype, id, expr)
 
 
@@ -287,9 +435,9 @@ class ASTBuilder(ISSLVisitor):
 
     # Visit a parse tree produced by ISSLParser#datatype.
     def visitDatatype(self, ctx:ISSLParser.DatatypeContext):
-        type = self.visit(ctx.r_type())
+        type = ctx.r_type().getText()
         array_specifier = None
-        if ctx.array_specifier is not None:
+        if len(ctx.array_specifier()) > 0:
             array_specifier = [self.visit(a) for a in ctx.array_specifier()]
 
         return DataTypeNode(type, array_specifier)
@@ -297,12 +445,12 @@ class ASTBuilder(ISSLVisitor):
 
     # Visit a parse tree produced by ISSLParser#r_type.
     def visitR_type(self, ctx:ISSLParser.R_typeContext):
-        return TypeNode(ctx.getText())
+        return DataTypeNode(ctx.getText(),None)
 
 
     # Visit a parse tree produced by ISSLParser#array_specifier.
     def visitArray_specifier(self, ctx:ISSLParser.Array_specifierContext):
-        return int(ctx.INT().getText(), base=0)
-
-
-
+        size = "0"
+        if ctx.INT is not None:
+            size = ctx.INT().getText()
+        return int(size, base=0)

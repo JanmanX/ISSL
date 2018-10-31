@@ -4,14 +4,19 @@ from antlr4 import *
 from antlr_python.ISSLLexer import ISSLLexer
 from antlr_python.ISSLParser import ISSLParser
 
-from SymbolValidator import DefPhase, RefPhase
-from CodeGen import CodeGenSMEIL
-from AST import ASTBuilder
+# from SymbolValidator import DefPhase, RefPhase
+# from CodeGen import generateSMEILCode
+from AST import *
 
 # from CodeGen import CodeGen
 import sys
 import os
 from pprint import pprint
+
+
+class Jenny(ASTVisitor):
+    def visitIDNode(self, node:  IDNode):
+        print("Visited IDNode: {0}".format(node.id))
 
 
 def main():
@@ -38,11 +43,14 @@ def main():
 
     astBuilder = ASTBuilder()
     ast = astBuilder.visit(tree)
-    print(ast)
-    print(vars(ast))
-    print(ast.buses)
-    exit(0)
 
+    print(ast)
+    j = Jenny()
+    j.visit(ast) 
+
+    #code = generateSMEILCode(ast)
+    #print(code)
+    exit(0)
     # Definition phase 
     defs = DefPhase()
     walker.walk(defs, tree)
