@@ -20,29 +20,42 @@ class SpecificationNode():
 
     def getBus(self, busName):
         for b in self.buses:
-            if b.name == busName:
+            if b.idNode.id == busName:
                 return b
+        return None
+
+    def getStage(self, stageName):
+        for s in self.stages:
+            if s.idNode.id == stageName:
+                return s
         return None
 
 
 
 class BusNode():
-    def __init__(self, name, channels, driver=None):
-        self.name = name
+    def __init__(self, idNode, channels, driver=None):
+        self.idNode = idNode
         self.channels = channels
         self.driver = driver
     def __repr__(self):
-        return "bus(name:{0}, channels:{1}, driver:{2})".format(
-            self.name, 
+        return "bus(id:{0}, channels:{1}, driver:{2})".format(
+            self.idNode, 
             self.channels,
             self.driver)
 
+    def getChannel(self, channelName):
+        for c in self.channels:
+            if c.idNode.id == channelName:
+                return c
+        return None
+
+
 class ChannelNode():
-    def __init__(self, type, id):
+    def __init__(self, type, idNode):
         self.type = type
-        self.id = id
+        self.idNode = idNode
     def __repr__(self):
-        return "channel(id:{0}, type:{1})".format(self.id, self.type)
+        return "channel(id:{0}, type:{1})".format(self.idNode, self.type)
 
 
 class ClockNode():
@@ -65,6 +78,20 @@ class StageNode():
                 if '.' in stat.id:
                     buses.append(stat.id.split('.')[0]) # append bus name to list
         return buses
+
+    def getVar(self, varName):
+        for v in self.vars:
+            if v.idNode.id == varName:
+                return v
+        return None 
+
+
+    def __repr__(self):
+        return "StageNode(id:{0}, vars:{1}, stats:{2})".format(
+            self.idNode,
+            self.vars,
+            self.stats
+        )
 
 
 class ForNode():
@@ -90,9 +117,12 @@ class AssignNode():
         self.expr = expr
 
 class VarNode():
-    def __init__(self, id, type):
-        self.id = id
+    def __init__(self, idNode, type):
+        self.idNode = idNode
         self.type = type
+
+    def __repr__(self):
+        return "VarNode(idNode:{0}, type:{1})".format(self.idNode, self.type)
 
 # unused ?
 class VarDeclNode():
@@ -185,13 +215,13 @@ class ASTVisitor():
 
 
     def visitBusNode(self, node : BusNode):
-        self.visit(node.name)
+        self.visit(node.idNode)
         for c in node.channels:
             self.visit(c)
     
 
     def visitChannelNode(self, node : ChannelNode):
-        self.visit(node.id)
+        self.visit(node.idNode)
         self.visit(node.type)
 
     def visitClockNode(self, node : ClockNode):
@@ -199,7 +229,7 @@ class ASTVisitor():
             self.visit(s)
 
     def visitStageNode(self, node : StageNode):
-        self.visit(node.id)
+        self.visit(node.idNode)
         for v in node.vars:
             self.visit(v)
         for stat in node.stats:
@@ -223,11 +253,11 @@ class ASTVisitor():
             self.visit(stat)
 
     def visitAssignNode(self, node : AssignNode):
-        self.visit(node.id)
+        self.visit(node.idNode)
         self.visit(node.expr)
 
     def visitVarNode(self, node : VarNode):
-        self.visit(node.id)
+        self.visit(node.idNode)
         self.visit(node.type)
 
     def visitVarDeclNode(self, node : VarDeclNode):
@@ -291,7 +321,6 @@ class ASTBuilder(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#channel_specification.
     def visitChannel_specification(self, ctx:ISSLParser.Channel_specificationContext):
         type = self.visit(ctx.r_type())
-        print(type)
         id = IDNode(ctx.ID().getText())
         return ChannelNode(type, id)
 
@@ -314,6 +343,7 @@ class ASTBuilder(ISSLVisitor):
         vars = []
         for stat in stats:
             if isinstance(stat, VarDeclNode):
+                print('!!! {0}'.format(stat.id))
                 vars.append(VarNode(stat.id, stat.type))
                 stats_modified.append(AssignNode(stat.id, stat.expr))
             else:
@@ -356,6 +386,7 @@ class ASTBuilder(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#assign.
     def visitAssign(self, ctx:ISSLParser.AssignContext):
         expr = self.visit(ctx.expr())
+
         idStr = ctx.qualified_id().getText()
         id = IDNode(idStr)
 
