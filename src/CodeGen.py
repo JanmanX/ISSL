@@ -5,73 +5,65 @@ from antlr_python.ISSLListener import ISSLListener
 from antlr_python.ISSLVisitor import ISSLVisitor
 
 from AST import *
-from SymbolValidator import *
 import SMEILSymbols 
 
 
 def generateTypeCode(datatype : DataTypeNode):
     t = datatype.type
-    dims = "".join(["[{0}]".format(d) for d in datatype.dims])
+    dims = ""
+
+    if datatype.dims is not None:
+        dims = "".join(["[{0}]".format(d) for d in datatype.dims])
+
     return dims+t
 
 def generateVarDeclCode(var : VarNode):
     return SMEILSymbols.SME_VARDECL_FMT.format(
-                            var.id,
+                            var.idNode.id,
                             generateTypeCode(var.type),
                             "0") 
 
 
-def generateProcCode(stage : StageNode):
+def generateProcCode(stage : StageNode, buses):
+    # "in" busses
+    parameters_in = ", ".join(["in {0}".format(b) for b in ASTBusReads().getBusesRead(stage)])
+
+    # "out" busses
+    driver_buses = [b.idNode.id for b in buses if b.driver == stage.idNode.id]
+    parameters_out = " ".join(", out {0}".format(b) for b in driver_buses)
+
+    # parameters
+    parameters = parameters_in + parameters_out
+
+    # vars
     varDecls = "\n".join([generateVarDeclCode(v) for v in stage.vars])
 
+    # code
+    code = SMEILStageCodeGenerator().generateStageCode(stage)
+    
     return SMEILSymbols.SME_PROC_FMT.format(
-           stage.id,
-            
+           stage.idNode,
+           parameters,
+           varDecls,
+           code
     )
 
-        # "in" busses
-        parameters_in = ", ".join(["in {0}".format(b) for b in stage.reads])
 
-        # "out" busses
-        # Get all busses which have channels with the current process as its
-        # driver
-        driver_busses = [b.name for b in self.symbolTable
-                            if isinstance(b,Bus) and any(c.driver == name for c in b.channels)]
-        # Remove duplicates
-        driver_busses = list(set(driver_busses))
-        parameters_out = " ".join([", out {0}".format(b) for b in driver_busses])
-        parameters = ""
-
-        # define vars
-        vars_ = "".join([CodeGenSMEIL.generateVarDeclCode(v) for v in stage.vars])
-
-        code = "".join([self.visit(s) for s in ctx.stat()])
-
-        return SMEILSymbols.SME_PROC_FMT.format(
-            name,
-            parameters,
-            vars_, 
-            code
-        )
-
-
-
-
-def generateChannelCode(channel: Channel):
-    return SMEILSymbols.SME_CHANNEL_FMT.format(channel.name, channel.type)
-
-
-
-def generateBusCode(bus: Bus):
-    channels = ""
-    for c in bus.channels:
-        channels += generateChannelCode(c)
-
-    exposed = (SMEILSymbols.SME_BUS_MODIFIER_EXPOSED 
-                if bus.exposed 
-                else SMEILSymbols.SME_BUS_MODIFIER_NONE)
-    return SMEILSymbols.SME_BUS_FMT.format(exposed, bus.name, channels)
-
+#def generateChannelCode(channel: Channel):
+#    return SMEILSymbols.SME_CHANNEL_FMT.format(channel.name, channel.type)
+#
+#
+#
+#def generateBusCode(bus: Bus):
+#    channels = ""
+#    for c in bus.channels:
+#        channels += generateChannelCode(c)
+#
+#    exposed = (SMEILSymbols.SME_BUS_MODIFIER_EXPOSED 
+#                if bus.exposed 
+#                else SMEILSymbols.SME_BUS_MODIFIER_NONE)
+#    return SMEILSymbols.SME_BUS_FMT.format(exposed, bus.name, channels)
+#
 
 def generateNetworkCode(name, busses, procs):
     return ""
@@ -81,13 +73,100 @@ def generateNetworkCode(name, busses, procs):
 
 
 def generateSMEILCode(ast : SpecificationNode):
-    procs = "\n".join([generateProcCode(s) for s in ast.stages])
+    procs = "\n".join([generateProcCode(s, ast.buses) for s in ast.stages])
     network = generateNetworkCode("main", ast.buses, ast.clock.stages)
 
     return "{0}\n\n{1}".format(
         procs,
         network
     )
+
+
+class SMEILStageCodeGenerator(ASTVisitor):
+    def generateStageCode(self, node : StageNode):
+        return self.visit(node) 
+
+    def visit(self, node):
+        if(isinstance(node, SpecificationNode)): return self.visitSpecificationNode(node)
+        elif(isinstance(node, BusNode)): return self.visitBusNode(node)
+        elif(isinstance(node, ChannelNode)): return self.visitChannelNode(node) 
+        elif(isinstance(node, ClockNode)): return self.visitClockNode(node)
+        elif(isinstance(node, StageNode)): return self.visitStageNode(node)
+        elif(isinstance(node, ForNode)): return self.visitForNode(node)
+        elif(isinstance(node, IfNode)): return self.visitIfNode(node)
+        elif(isinstance(node, BlockNode)): return self.visitBlockNode(node)
+        elif(isinstance(node, AssignNode)): return self.visitAssignNode(node)
+        elif(isinstance(node, VarNode)): return self.visitVarNode(node)
+        elif(isinstance(node, VarDeclNode)): return self.visitVarDeclNode(node)
+        elif(isinstance(node, InfixExprNode)): return self.visitInfixExprNode(node)
+        elif(isinstance(node, IDNode)): return self.visitIDNode(node)
+        elif(isinstance(node, InitializerListNode)): return self.visitInitializerListNode(node)
+        elif(isinstance(node, DataTypeNode)): return self.visitDatatypeNode(node)
+        elif(isinstance(node, ValueNode)): return self.visitValueNode(node)
+        else: print(node); raise TypeError("Unknown node type: {0}".format(type(node)))
+
+        return None
+
+
+    def visitForNode(self, node : ForNode):
+        return SMEILSymbols.SME_FOR_FMT.format(
+            self.visit(node.iteratorId),
+            self.visit(node.fromExpr),
+            self.visit(node.toExpr),
+            self.visit(node.stat)
+        ) 
+
+    def visitIfNode(self, node : IfNode):
+        return SMEILSymbols.SME_IF_FMT.format(
+            self.visit(node.expr),
+            self.visit(node.stat)
+        )
+
+    def visitBlockNode(self, node : BlockNode):
+        return "{{\n {0} \n}}".format(";\n".join([self.visit(s) for s in node.stats])) 
+
+    def visitAssignNode(self, node : AssignNode):
+        print(type(node))
+        ret = self.visit(node.idNode)
+        print("RET: {0}".format(ret))
+        
+        return (self.visit(node.idNode) 
+                + SMEILSymbols.ASSIGN 
+                + self.visit(node.expr))
+
+    def visitInfixExprNode(self, node : InfixExprNode):
+        return self.visit(node.left) + node.op + self.visit(node.right)
+
+    def visitIDNode(self, node : IDNode):
+        return node.id 
+
+    def visitInitializerListNode(self, node : InitializerListNode):
+        return "[ " + ", ".join([self.visit(e) for e in node.exprs]) + "]" 
+
+    def visitValueNode(self, node : ValueNode):
+        return str(node.value)
+
+
+
+
+
+
+class ASTBusReads(ASTVisitor):
+    def getBusesRead(self, stage):
+        self.stage = stage
+        self.buses = []
+        self.visit(self.stage)        
+        return set(self.buses)
+
+    def visitIDNode(self, node : IDNode):
+        if '.' in node.id:
+            busName = node.id.split('.')[0]
+            self.buses.append(busName)           
+
+    def visitAssignNode(self, node : AssignNode):
+        # We do not want to visit the left side, as we are only interested in
+        # reads.
+        self.visit(node.expr)
 
 
 class CodeGenSMEIL(ISSLVisitor):
@@ -250,196 +329,5 @@ class CodeGenSMEIL(ISSLVisitor):
     def visitQualified_id(self, ctx:ISSLParser.Qualified_idContext):
         return ctx.getText()
 
-
-
-
-#class CodeGenSMEIL(ISSLListener):
-#    # CodeGens
-#    @staticmethod
-#    def generateProcCode(name, vars, bus, code):
-#        pass
-#
-#    @staticmethod
-#    def generateChannelCode(channel: Channel):
-#        return SME_CHANNEL_FMT.format(channel.name, channel.type)
-#
-#    @staticmethod
-#    def generateBusCode(bus: Bus):
-#        channels = ""
-#        for c in bus.channels:
-#            channels += CodeGenSMEIL.generateChannelCode(c)
-#
-#        return SME_BUS_FMT.format(bus.name, channels)
-#
-#    @staticmethod
-#    def generateNetworkCode(name, busses, procs):
-#        busses = "\n".join([CodeGenSMEIL.generateBusCode(b) for b in busses])
-#        return SME_NETWORK_FMT.format(name, busses, "")
-#
-#    def __init__(self, symbolTable):
-#        self.symbolTable = symbolTable
-#        self.code = ""
-#        self.procs = ""
-#        self.network = ""
-#
-#    # Enter a parse tree produced by ISSLParser#specification.
-#    def enterSpecification(self, ctx:ISSLParser.SpecificationContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#specification.
-#    def exitSpecification(self, ctx:ISSLParser.SpecificationContext):
-#        busses = [b for b in self.symbolTable if isinstance(b, Bus)]
-#        self.network = CodeGenSMEIL.generateNetworkCode("main", busses, None)
-#        self.code = self.procs + self.network
-#
-#
-#    # Enter a parse tree produced by ISSLParser#specs.
-#    def enterSpecs(self, ctx:ISSLParser.SpecsContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#specs.
-#    def exitSpecs(self, ctx:ISSLParser.SpecsContext):
-#        pass
-#
-#    # Enter a parse tree produced by ISSLParser#stage_specification.
-#    def enterStage_specification(self, ctx:ISSLParser.Stage_specificationContext):
-#        name = ctx.ID().getText()
-#        stage = getStageFromSymbolTable(name, self.symbolTable)
-#
-#        # "in" busses
-#        parameters = ", ".join(["in {0}".format(b) for b in stage.reads])
-#
-#        # "out" busses
-#        # Get all busses which have channels with the current process as its
-#        # driver
-#        driver_busses = [b.name for b in self.symbolTable
-#                            if isinstance(b,Bus) and any(c.driver == name for c in b.channels)]
-#        # Remove duplicates
-#        driver_busses = list(set(driver_busses))
-#        parameters += " ".join([", out {0}".format(b) for b in driver_busses])
-#        self.procs += SME_PROC_PROLOGUE_FMT.format(name, parameters)
-#
-#
-#    # Exit a parse tree produced by ISSLParser#stage_specification.
-#    def exitStage_specification(self, ctx:ISSLParser.Stage_specificationContext):
-#        self.procs += "} \n\n"
-#
-#
-#    # Enter a parse tree produced by ISSLParser#for.
-#    def enterFor(self, ctx:ISSLParser.ForContext):
-#
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#for.
-#    def exitFor(self, ctx:ISSLParser.ForContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#if.
-#    def enterIf(self, ctx:ISSLParser.IfContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#if.
-#    def exitIf(self, ctx:ISSLParser.IfContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#block.
-#    def enterBlock(self, ctx:ISSLParser.BlockContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#block.
-#    def exitBlock(self, ctx:ISSLParser.BlockContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#assign.
-#    def enterAssign(self, ctx:ISSLParser.AssignContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#assign.
-#    def exitAssign(self, ctx:ISSLParser.AssignContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#varDecl.
-#    def enterVarDecl(self, ctx:ISSLParser.VarDeclContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#varDecl.
-#    def exitVarDecl(self, ctx:ISSLParser.VarDeclContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#parens.
-#    def enterParens(self, ctx:ISSLParser.ParensContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#parens.
-#    def exitParens(self, ctx:ISSLParser.ParensContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#MulDiv.
-#    def enterMulDiv(self, ctx:ISSLParser.MulDivContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#MulDiv.
-#    def exitMulDiv(self, ctx:ISSLParser.MulDivContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#AddSub.
-#    def enterAddSub(self, ctx:ISSLParser.AddSubContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#AddSub.
-#    def exitAddSub(self, ctx:ISSLParser.AddSubContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#id.
-#    def enterId(self, ctx:ISSLParser.IdContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#id.
-#    def exitId(self, ctx:ISSLParser.IdContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#int.
-#    def enterInt(self, ctx:ISSLParser.IntContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#int.
-#    def exitInt(self, ctx:ISSLParser.IntContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#EqNeq.
-#    def enterEqNeq(self, ctx:ISSLParser.EqNeqContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#EqNeq.
-#    def exitEqNeq(self, ctx:ISSLParser.EqNeqContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#qualified_id.
-#    def enterQualified_id(self, ctx:ISSLParser.Qualified_idContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#qualified_id.
-#    def exitQualified_id(self, ctx:ISSLParser.Qualified_idContext):
-#        pass
-#
-#
-#    # Enter a parse tree produced by ISSLParser#r_type.
-#    def enterR_type(self, ctx:ISSLParser.R_typeContext):
-#        pass
-#
-#    # Exit a parse tree produced by ISSLParser#r_type.
-#    def exitR_type(self, ctx:ISSLParser.R_typeContext):
-#        pass
 
 

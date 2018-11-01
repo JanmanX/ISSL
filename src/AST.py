@@ -5,7 +5,7 @@ from antlr_python.ISSLListener import ISSLListener
 from antlr_python.ISSLVisitor import ISSLVisitor
 
 from enum import Enum
-
+import SMEILSymbols
 
 class SpecificationNode():
     def __init__(self, buses, clock, stages):
@@ -69,15 +69,6 @@ class StageNode():
         self.idNode = idNode
         self.vars = vars
         self.stats = stats
-
-    # Returns a list of buses being written to
-    def busesWrittenTo(self):
-        buses = []
-        for stat in self.stats:
-            if isinstance(stat, AssignNode):
-                if '.' in stat.id:
-                    buses.append(stat.id.split('.')[0]) # append bus name to list
-        return buses
 
     def getVar(self, varName):
         for v in self.vars:
@@ -148,6 +139,9 @@ class InitializerListNode():
     def __init__(self, exprs):
         self.exprs = exprs
 
+    def __repr__(self):
+        return "[" + ", ".join([str(e) for e in self.exprs]) + " ]"
+
 class DataTypeNode():
     def __init__(self, type, dims):
         self.type = type
@@ -173,16 +167,16 @@ class ValueNode():
         self.value = value
 
 class Operators(Enum):
-    MUL = 1
-    DIV = 2
-    ADD = 3
-    SUB = 4
-    EQ = 5
-    NEQ = 6
+    MUL = SMEILSymbols.OP_MUL
+    DIV = SMEILSymbols.OP_DIV
+    ADD = SMEILSymbols.OP_ADD
+    SUB = SMEILSymbols.OP_SUB
+    EQ = SMEILSymbols.OP_EQ
+    NEQ = SMEILSymbols.OP_NEQ
 
 
 
-class ASTVisitor():
+class ASTVisitor:
     def visit(self, node):
         if(isinstance(node, SpecificationNode)): self.visitSpecificationNode(node)
         elif(isinstance(node, BusNode)): self.visitBusNode(node)
@@ -411,17 +405,19 @@ class ASTBuilder(ISSLVisitor):
 
     # Visit a parse tree produced by ISSLParser#initializerList.
     def visitInitializerList(self, ctx:ISSLParser.InitializerListContext):
-        exprs = self.visitChildren(ctx)
+        first = self.visit(ctx.first)
+        rest = [self.visit(e) for e in ctx.rest]
+        exprs = [first] + rest
         return InitializerListNode(exprs)
 
 
     # Visit a parse tree produced by ISSLParser#MulDiv.
     def visitMulDiv(self, ctx:ISSLParser.MulDivContext):
-        left = self.visit(ctx.left())
-        right = self.visit(ctx.right())
-        op = (Operators.MUL
+        left = self.visit(ctx.left)
+        right = self.visit(ctx.right)
+        op = (SMEILSymbols.OP_MUL
                 if ctx.op.type == ISSLParser.OP_MUL
-                else Operators.DIV)  
+                else SMEILSymbols.OP_DIV)  
  
         return InfixExprNode(op, left, right)
 
@@ -430,9 +426,9 @@ class ASTBuilder(ISSLVisitor):
     def visitAddSub(self, ctx:ISSLParser.AddSubContext):
         left = self.visit(ctx.left)
         right = self.visit(ctx.right)
-        op = (Operators.ADD
+        op = (SMEILSymbols.OP_ADD
                 if ctx.op.type == ISSLParser.OP_ADD
-                else Operators.SUB)  
+                else SMEILSymbols.OP_SUB)  
  
         return InfixExprNode(op, left, right)
 
@@ -452,9 +448,9 @@ class ASTBuilder(ISSLVisitor):
     def visitEqNeq(self, ctx:ISSLParser.EqNeqContext):
         left = self.visit(ctx.left)
         right = self.visit(ctx.right)
-        op = (Operators.EQ
+        op = (SMEILSymbols.OP_EQ
                 if ctx.op.type == ISSLParser.OP_EQ
-                else Operators.NEQ)  
+                else SMEILSymbols.OP_NEQ)  
  
         return InfixExprNode(op, left, right)
 

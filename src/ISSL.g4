@@ -39,7 +39,7 @@ expr    :   '(' expr ')'                        # parens
         |   left=expr op=(OP_EQ  | OP_NEQ) right=expr  # EqNeq
         |   qualified_id                        # id
         |   INT                                 # int
-        |   '[' expr (',' expr)* ']'            # initializerList
+        |   '[' first=expr (',' rest+=expr)* ']'            # initializerList
         ;
 
 

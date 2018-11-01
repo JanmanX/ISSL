@@ -14,9 +14,6 @@ def verifyAST(ast : SpecificationNode):
     return checkSymbolRefs(ast)
 
 
-
-# TODO: Type Check
-
 ### Symbol Reference check
 def checkSymbolRefs(ast: SpecificationNode):
     errors = []
@@ -106,7 +103,8 @@ class ASTCheckRefs(ASTVisitor):
                 return
 
         else:   # var
-            varName = node.id
+            # In case of array indexing, remove the brackets
+            varName = node.id.split('[', 1)[0]
 
             # Search through the stack top down (reversed)
             for scope in reversed(self.scopes):

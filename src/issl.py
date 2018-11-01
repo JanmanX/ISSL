@@ -7,6 +7,8 @@ from antlr_python.ISSLParser import ISSLParser
 # from SymbolValidator import DefPhase, RefPhase
 # from CodeGen import generateSMEILCode
 from AST import *
+from ErrorControl import verifyAST 
+from CodeGen import generateSMEILCode
 
 # from CodeGen import CodeGen
 import sys
@@ -44,26 +46,33 @@ def main():
     astBuilder = ASTBuilder()
     ast = astBuilder.visit(tree)
 
-    print(ast)
-    j = Jenny()
-    j.visit(ast) 
+    # Check Refs
+    ref_errors = verifyAST(ast)
+    if len(ref_errors) > 0:
+        pprint(ref_errors)
+        exit(0)
 
-    #code = generateSMEILCode(ast)
-    #print(code)
-    exit(0)
-    # Definition phase 
-    defs = DefPhase()
-    walker.walk(defs, tree)
-    # Reference phase
-    refs = RefPhase(defs.symbolTable)
-    walker.walk(refs, tree)
+    # TODO: Type Check
 
-    # Type Check
-    # TODO
+    # Generate code
+    code = generateSMEILCode(ast)
 
-    # CodeGen
-    codeGen = CodeGenSMEIL(refs.symbolTable)
-    print(codeGen.visit(tree))
+
+    print(code)
+  #  exit(0)
+  #  # Definition phase 
+  #  defs = DefPhase()
+  #  walker.walk(defs, tree)
+  #  # Reference phase
+  #  refs = RefPhase(defs.symbolTable)
+  #  walker.walk(refs, tree)
+
+  #  # Type Check
+  #  # TODO
+
+  #  # CodeGen
+  #  codeGen = CodeGenSMEIL(refs.symbolTable)
+  #  print(codeGen.visit(tree))
 
 
 
