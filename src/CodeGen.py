@@ -40,7 +40,7 @@ def generateProcCode(stage : StageNode, buses):
 
     # code
     code = SMEILStageCodeGenerator().generateStageCode(stage)
-    
+
     return SMEILSymbols.SME_PROC_FMT.format(
            stage.idNode,
            parameters,
@@ -108,6 +108,9 @@ class SMEILStageCodeGenerator(ASTVisitor):
         return None
 
 
+    def visitStageNode(self, node : StageNode):
+        return ";\n".join([self.visit(s) for s in node.stats])
+
     def visitForNode(self, node : ForNode):
         return SMEILSymbols.SME_FOR_FMT.format(
             self.visit(node.iteratorId),
@@ -126,10 +129,6 @@ class SMEILStageCodeGenerator(ASTVisitor):
         return "{{\n {0} \n}}".format(";\n".join([self.visit(s) for s in node.stats])) 
 
     def visitAssignNode(self, node : AssignNode):
-        print(type(node))
-        ret = self.visit(node.idNode)
-        print("RET: {0}".format(ret))
-        
         return (self.visit(node.idNode) 
                 + SMEILSymbols.ASSIGN 
                 + self.visit(node.expr))

@@ -337,7 +337,6 @@ class ASTBuilder(ISSLVisitor):
         vars = []
         for stat in stats:
             if isinstance(stat, VarDeclNode):
-                print('!!! {0}'.format(stat.id))
                 vars.append(VarNode(stat.id, stat.type))
                 stats_modified.append(AssignNode(stat.id, stat.expr))
             else:
