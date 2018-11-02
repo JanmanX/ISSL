@@ -33,6 +33,9 @@ OP_GT    : '>' ;
 OP_GEQ   : '>=' ;
 OP_LT    : '<' ;
 OP_LEQ   : '<=' ;
+OP_AND   : '&' ;
+OP_XOR  : '^' ;
+OP_OR   : '|' ;
 
 // Fragments
 fragment DIGIT      : '0'..'9';

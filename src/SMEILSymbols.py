@@ -10,7 +10,9 @@ OP_GT = ">"
 OP_GEQ = ">="
 OP_EQ = "=="
 OP_NEQ = "!="
-
+OP_AND = "&"
+OP_XOR = "^"
+OP_OR = "|"
 ASSIGN = "="
 
 

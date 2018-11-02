@@ -166,15 +166,6 @@ class ValueNode():
     def __init__(self, value):
         self.value = value
 
-class Operators(Enum):
-    MUL = SMEILSymbols.OP_MUL
-    DIV = SMEILSymbols.OP_DIV
-    ADD = SMEILSymbols.OP_ADD
-    SUB = SMEILSymbols.OP_SUB
-    EQ = SMEILSymbols.OP_EQ
-    NEQ = SMEILSymbols.OP_NEQ
-
-
 
 class ASTVisitor:
     def visit(self, node):
@@ -427,6 +418,18 @@ class ASTBuilder(ISSLVisitor):
     def visitLeLeqGeGeq(self, ctx:ISSLParser.LeLeqGeGeqContext):
         left = self.visit(ctx.left)
         right = self.visit(ctx.right)
+        op = SMEILSymbols.OP_AND
+        if ctx.op.type == ISSLParser.OP_XOR:
+            op = SMEILSymbols.OP_XOR
+        elif ctx.op.type == ISSLParser.OP_OR:
+            op = SMEILSymbols.OP_OR
+        return InfixExprNode(op, left, right)
+
+
+    # Visit a parse tree produced by ISSLParser#AndXorOr.
+    def visitAndXorOr(self, ctx:ISSLParser.AndXorOrContext):
+        left = self.visit(ctx.left)
+        right = self.visit(ctx.right)
         op = SMEILSymbols.OP_LT
         if ctx.op.type == ISSLParser.OP_LEQ:
             op = SMEILSymbols.OP_LEQ
@@ -436,7 +439,6 @@ class ASTBuilder(ISSLVisitor):
             op = SMEILSymbols.OP_GEQ
 
         return InfixExprNode(op, left, right)
-
 
 
     # Visit a parse tree produced by ISSLParser#AddSub.

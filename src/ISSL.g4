@@ -38,6 +38,7 @@ expr    :   '(' expr ')'                        # parens
         |   left=expr op=(OP_ADD | OP_SUB) right=expr  # AddSub
         |   left=expr op=(OP_LT | OP_LEQ | OP_GT | OP_GEQ) right=expr  # LeLeqGeGeq // Less, LessEqual, Greater, GreaterEqual
         |   left=expr op=(OP_EQ  | OP_NEQ) right=expr  # EqNeq 
+        |   left=expr op=(OP_AND | OP_XOR | OP_OR) right=expr  # AndXorOr  
         |   qualified_id                        # id
         |   INT                                 # int
         |   '[' first=expr (',' rest+=expr)* ']'            # initializerList
