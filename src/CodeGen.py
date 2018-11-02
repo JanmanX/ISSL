@@ -52,26 +52,22 @@ def generateProcCode(stage : StageNode, buses):
     )
 
 
-#def generateChannelCode(channel: Channel):
-#    return SMEILSymbols.SME_CHANNEL_FMT.format(channel.name, channel.type)
-#
-#
-#
-#def generateBusCode(bus: Bus):
-#    channels = ""
-#    for c in bus.channels:
-#        channels += generateChannelCode(c)
-#
-#    exposed = (SMEILSymbols.SME_BUS_MODIFIER_EXPOSED 
-#                if bus.exposed 
-#                else SMEILSymbols.SME_BUS_MODIFIER_NONE)
-#    return SMEILSymbols.SME_BUS_FMT.format(exposed, bus.name, channels)
-#
+def generateChannelCode(channel: ChannelNode):
+    return SMEILSymbols.SME_CHANNEL_FMT.format(channel.idNode.id, channel.type)
 
-def generateNetworkCode(name, busses, procs):
-    return ""
-#    busses = "".join([CodeGenSMEIL.generateBusCode(b) for b in busses])
-#    return SMEILSymbols.SME_NETWORK_FMT.format(name, busses, "")
+
+
+def generateBusCode(bus: BusNode):
+    channels = ""
+    for c in bus.channels:
+        channels += generateChannelCode(c)
+
+    return SMEILSymbols.SME_BUS_FMT.format(bus.idNode.id, channels)
+
+
+def generateNetworkCode(name, buses, procs):
+    buses = "".join([generateBusCode(b) for b in buses])
+    return SMEILSymbols.SME_NETWORK_FMT.format(name, buses, "")
 
 
 

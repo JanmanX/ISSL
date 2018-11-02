@@ -418,18 +418,6 @@ class ASTBuilder(ISSLVisitor):
     def visitLeLeqGeGeq(self, ctx:ISSLParser.LeLeqGeGeqContext):
         left = self.visit(ctx.left)
         right = self.visit(ctx.right)
-        op = SMEILSymbols.OP_AND
-        if ctx.op.type == ISSLParser.OP_XOR:
-            op = SMEILSymbols.OP_XOR
-        elif ctx.op.type == ISSLParser.OP_OR:
-            op = SMEILSymbols.OP_OR
-        return InfixExprNode(op, left, right)
-
-
-    # Visit a parse tree produced by ISSLParser#AndXorOr.
-    def visitAndXorOr(self, ctx:ISSLParser.AndXorOrContext):
-        left = self.visit(ctx.left)
-        right = self.visit(ctx.right)
         op = SMEILSymbols.OP_LT
         if ctx.op.type == ISSLParser.OP_LEQ:
             op = SMEILSymbols.OP_LEQ
@@ -438,8 +426,30 @@ class ASTBuilder(ISSLVisitor):
         elif ctx.op.type == ISSLParser.OP_GEQ:
             op = SMEILSymbols.OP_GEQ
 
+
         return InfixExprNode(op, left, right)
 
+
+    # Visit a parse tree produced by ISSLParser#AndXorOr.
+    def visitAndXorOr(self, ctx:ISSLParser.AndXorOrContext):
+        left = self.visit(ctx.left)
+        right = self.visit(ctx.right)
+        op = SMEILSymbols.OP_AND
+        if ctx.op.type == ISSLParser.OP_XOR:
+            op = SMEILSymbols.OP_XOR
+        elif ctx.op.type == ISSLParser.OP_OR:
+            op = SMEILSymbols.OP_OR
+
+        return InfixExprNode(op, left, right)
+
+    # Visit a parse tree produced by ISSLParser#LogicalAndOr.
+    def visitLogicalAndOr(self, ctx:ISSLParser.LogicalAndOrContext):
+        left = self.visit(ctx.left)
+        right = self.visit(ctx.right)
+        op = SMEILSymbols.OP_LOGICAL_AND
+        if ctx.op.type == ISSLParser.OP_LOGICAL_OR:
+            op = SMEILSymbols.OP_LOGICAL_OR
+        return InfixExprNode(op, left, right)
 
     # Visit a parse tree produced by ISSLParser#AddSub.
     def visitAddSub(self, ctx:ISSLParser.AddSubContext):
