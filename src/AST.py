@@ -348,10 +348,10 @@ class ASTBuilder(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#for.
     def visitFor(self, ctx:ISSLParser.ForContext):
         iterator = self.visit(ctx.qualified_id())
-        fromExpr = self.visit(ctx.from_())
-        toExpr = self.visit(ctx.to())
+        fromExpr = self.visit(ctx.from_)
+        toExpr = self.visit(ctx.to)
         stat = self.visit(ctx.stat())
-        return ForNode(iter, fromExpr, toExpr, stat)
+        return ForNode(iterator, fromExpr, toExpr, stat)
 
 
     # Visit a parse tree produced by ISSLParser#if.
@@ -391,10 +391,13 @@ class ASTBuilder(ISSLVisitor):
         datatype = self.visit(ctx.datatype())
         id = IDNode(ctx.ID().getText())
         expr = ValueNode(0)
-        if ctx.expr is not None:
+        if ctx.expr() is not None:
             expr = self.visit(ctx.expr()) 
 
-        print(datatype)
+
+        # TODO: Check if optional array size defined, and set it here
+
+
         return VarDeclNode(datatype, id, expr)
 
 
@@ -420,6 +423,21 @@ class ASTBuilder(ISSLVisitor):
  
         return InfixExprNode(op, left, right)
 
+    # Visit a parse tree produced by ISSLParser#LeLeqGeGeq.
+    def visitLeLeqGeGeq(self, ctx:ISSLParser.LeLeqGeGeqContext):
+        left = self.visit(ctx.left)
+        right = self.visit(ctx.right)
+        op = SMEILSymbols.OP_LT
+        if ctx.op.type == ISSLParser.OP_LEQ:
+            op = SMEILSymbols.OP_LEQ
+        elif ctx.op.type == ISSLParser.OP_GT:
+            op = SMEILSymbols.OP_GT
+        elif ctx.op.type == ISSLParser.OP_GEQ:
+            op = SMEILSymbols.OP_GEQ
+
+        return InfixExprNode(op, left, right)
+
+
 
     # Visit a parse tree produced by ISSLParser#AddSub.
     def visitAddSub(self, ctx:ISSLParser.AddSubContext):
@@ -430,7 +448,6 @@ class ASTBuilder(ISSLVisitor):
                 else SMEILSymbols.OP_SUB)  
  
         return InfixExprNode(op, left, right)
-
 
 
     # Visit a parse tree produced by ISSLParser#id.
@@ -477,6 +494,6 @@ class ASTBuilder(ISSLVisitor):
     # Visit a parse tree produced by ISSLParser#array_specifier.
     def visitArray_specifier(self, ctx:ISSLParser.Array_specifierContext):
         size = "0"
-        if ctx.INT is not None:
+        if ctx.INT() is not None:
             size = ctx.INT().getText()
         return int(size, base=0)

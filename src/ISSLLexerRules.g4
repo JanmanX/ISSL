@@ -29,7 +29,10 @@ OP_MUL  : '*' ;
 OP_DIV  : '/' ;
 OP_EQ   : '==' ;
 OP_NEQ  : '!=' ;
-
+OP_GT    : '>' ;
+OP_GEQ   : '>=' ;
+OP_LT    : '<' ;
+OP_LEQ   : '<=' ;
 
 // Fragments
 fragment DIGIT      : '0'..'9';

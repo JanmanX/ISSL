@@ -13,27 +13,30 @@ def generateTypeCode(datatype : DataTypeNode):
     dims = ""
 
     if datatype.dims is not None:
-        dims = "".join(["[{0}]".format(d) for d in datatype.dims])
+        dims = "".join(["[{0}]".format(d if d > 0 else "") for d in datatype.dims])
 
     return dims+t
 
 def generateVarDeclCode(var : VarNode):
+    initVal = "0"
+    if var.type.dims is not None:
+        initVal = "[" + ", ".join(["0" for _ in range(var.type.dims[0])]) + "]"
     return SMEILSymbols.SME_VARDECL_FMT.format(
                             var.idNode.id,
                             generateTypeCode(var.type),
-                            "0") 
+                            initVal) 
 
 
 def generateProcCode(stage : StageNode, buses):
     # "in" busses
-    parameters_in = ", ".join(["in {0}".format(b) for b in ASTBusReads().getBusesRead(stage)])
+    parameters_in = ["in {0}".format(b) for b in ASTBusReads().getBusesRead(stage)]
 
     # "out" busses
     driver_buses = [b.idNode.id for b in buses if b.driver == stage.idNode.id]
-    parameters_out = " ".join(", out {0}".format(b) for b in driver_buses)
+    parameters_out = ["out {0}".format(b) for b in driver_buses]
 
     # parameters
-    parameters = parameters_in + parameters_out
+    parameters = ", ".join(parameters_in + parameters_out)
 
     # vars
     varDecls = "\n".join([generateVarDeclCode(v) for v in stage.vars])
