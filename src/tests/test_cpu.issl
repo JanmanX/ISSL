@@ -1,0 +1,120 @@
+// Instruction format
+//
+//  0 1 2 3 4 5 6 7 8
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |  op | rA| imm |
+// +-+-+-+-+-+-+-+-+
+// +-+-+-+-+-+-+-+-+
+// |  op | rA| rB|C|
+// +-+-+-+-+-+-+-+-+
+
+
+// Instruction bitmasks
+#define OP_BITMASK  0xE0
+#define RA_BITMASK  0x18
+#define IMM_BITMASK 0x07
+#define RB_BITMASK  0x06  
+#define C_BITMASK   0x01
+
+// Opcode definitions:
+// Instructions have a 'C' bit, that if set, the instruction will execute only
+// depending on the flag F from previous instruction.
+//
+// OP_SUB A, B 
+// OP_ADDC PC, 4  // Conditional branch
+//
+//
+// IF C == 0 || (C & F):
+//      PC = PC + 4 
+
+#define OP_ADD      0   // rA = rA + rB, sets F if overflow
+#define OP_SUB      1   // rA = rA - rB, sets F if result 0
+#define OP_MUL      2   // rA = rA * rB, sets F on overflow
+#define OP_DIV      3   // rA = rA / rB, set F on remainder
+#define OP_MOVI     4   // rA = imm, sets F if rA & imm != 0
+
+// Register definitions
+// Regs: A,B,C,PC
+// Special Regs: F
+#define NUM_REGS 4
+#define A 0
+#define B 1
+#define C 2
+#define PC 3
+
+bus Bus1 {
+    u1 condition
+    u8 wb_dest
+    u8 wb_val 
+}
+
+bus Bus2 {
+    u4 op
+    u8 rA
+    u8 rB
+    u3 imm
+    u1 c
+    u3 dest 
+}
+
+clock {
+    Stage1
+    Stage2
+}
+
+Stage1 {
+    u8[4] mem = [
+            0b10001101,
+            0b10010010,
+            0b01010010,
+            0
+    ]
+    
+    u8[NUM_REGS] regs = [0, 0, 0, 0]
+
+    // WB
+    regs[Bus1.wb_dest] = Bus1.wb_val
+
+    // IF + ID
+    u8 inst = mem[regs[PC]]
+
+    Bus2.dest = inst & RA_BITMASK 
+    Bus2.op =   inst & OP_BITMASK
+    Bus2.rA =   regs[inst & RA_BITMASK]
+    Bus2.imm =  inst & IMM_BITMASK
+    Bus2.rB =   regs[inst & RB_BITMASK]
+    Bus2.c =    inst & C_BITMASK
+}
+
+Stage2 {
+    u8 result = 0
+
+    // Reset condition
+    Bus1.condition = 0
+
+    if ( Bus2.c == 0 || Bus2.c & Bus1.condition) {
+        // XXX 'else' not implemented in ISSL yet
+        if (Bus2.op == OP_ADD) {
+            result = Bus2.rA + Bus2.rB
+
+            // TODO: Implement condition
+        }
+        if (Bus2.op == OP_SUB) {
+            result = Bus2.rA - Bus2.rB
+            if (result == 0) {
+                Bus1.condition = 1
+            }
+        }
+        if (Bus2.op == OP_MUL) {
+            result = Bus2.rA * Bus2.rB
+            // TODO: implement condition 
+        }
+        if (Bus2.op == OP_DIV) {
+            result = Bus2.rA / Bus2.rB
+            // TODO: implement condition
+        }
+    }
+
+    Bus1.wb_val = result
+    Bus1.wb_dest = Bus2.dest
+}
